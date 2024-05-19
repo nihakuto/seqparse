@@ -2,93 +2,78 @@ const path = require("path");
 const webpack = require("webpack");
 const nodeExternals = require("webpack-node-externals");
 
-const package = require("./package.json");
+const packageJson = require("./package.json");
 
 const webBuild = {
   entry: path.join(__dirname, "src", "index.ts"),
   target: "web",
-  mode: "none",
+  mode: "production",
   devtool: "source-map",
   optimization: {
-    minimize: false,
+    minimize: true,
   },
   output: {
     filename: "index.js",
     library: {
-      name: package.name,
+      name: packageJson.name,
       type: "umd",
     },
     path: path.join(__dirname, "dist"),
-    publicPath: "/dist/",
-    umdNamedDefine: true,
-    // https://stackoverflow.com/questions/64639839/typescript-webpack-library-generates-referenceerror-self-is-not-defined
-    globalObject: 'this',
+    globalObject: 'this', // Ensuring correct global object in different environments
   },
   module: {
     rules: [
-      { test: /\.(t|j)sx?$/, loader: "ts-loader", exclude: /node_modules/ },
+      {
+        test: /\.(t|j)sx?$/,
+        use: "ts-loader",
+        exclude: /node_modules/,
+      },
     ],
   },
-  externals: [nodeExternals({ modulesDir: path.join(__dirname, "node_modules") })],
   resolve: {
-    extensions: [".ts"],
+    extensions: [".ts", ".js"],
     fallback: {
       buffer: require.resolve("buffer"),
-      fs: false,
-      net: false,
-      tls: false,
       path: require.resolve("path-browserify"),
       stream: require.resolve("stream-browserify"),
       timers: require.resolve("timers-browserify"),
       url: require.resolve("url"),
     },
   },
+  externals: {
+    // Ensuring Node.js built-in modules are not bundled
+    buffer: 'buffer',
+    path: 'path',
+    stream: 'stream',
+    timers: 'timers',
+    url: 'url',
+  },
+  plugins: [
+    new webpack.ProvidePlugin({
+      Buffer: ['buffer', 'Buffer'],
+    }),
+  ],
 };
 
 const cliBuild = {
   ...webBuild,
   entry: path.join(__dirname, "src", "cli.ts"),
   target: "node",
-  mode: "none",
-  devtool: "source-map",
-  optimization: {
-    minimize: false,
-  },
   output: {
     filename: "cli.js",
     path: path.join(__dirname, "dist"),
-    publicPath: "/dist/",
-    umdNamedDefine: true,
-    chunkFormat: 'commonjs'
+    chunkFormat: 'commonjs',
   },
-  module: {
-    rules: [
-      { test: /\.(t|j)sx?$/, loader: "ts-loader", exclude: /node_modules/ },
-    ],
-  },
-  // externals: [],
-  resolve: {
-    extensions: [".ts"],
-    fallback: {
-      buffer: require.resolve("buffer"),
-      fs: false,
-      net: false,
-      tls: false,
-      path: require.resolve("path-browserify"),
-      stream: require.resolve("stream-browserify"),
-      timers: require.resolve("timers-browserify"),
-      url: require.resolve("url"),
-    },
-  },
+  externals: [
+    // Using nodeExternals to avoid bundling node_modules in CLI build
+    nodeExternals({ modulesDir: path.join(__dirname, "node_modules") }),
+  ],
   plugins: [
     new webpack.BannerPlugin({
       banner: '#!/usr/bin/env node',
       raw: true,
     }),
   ],
-//   experiments: {
-//     outputModule: true,
-// },
 };
 
 module.exports = [webBuild, cliBuild];
