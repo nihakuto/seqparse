@@ -40,17 +40,10 @@ const webBuild = {
       url: require.resolve("url"),
     },
   },
-  externals: {
-    // Ensuring Node.js built-in modules are not bundled
-    buffer: 'buffer',
-    path: 'path',
-    stream: 'stream',
-    timers: 'timers',
-    url: 'url',
-  },
   plugins: [
     new webpack.ProvidePlugin({
       Buffer: ['buffer', 'Buffer'],
+      process: 'process/browser',
     }),
   ],
 };
