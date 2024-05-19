@@ -13,7 +13,7 @@ const webBuild = {
     minimize: true,
   },
   output: {
-    filename: "index.js",
+    filename: "seqparse.min.js", // Change filename to seqparse.min.js
     library: {
       name: packageJson.name,
       type: "umd",
